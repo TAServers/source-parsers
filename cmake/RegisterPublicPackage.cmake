@@ -17,7 +17,7 @@ function(RegisterPublicPackage PACKAGE_NAME)
           PUBLIC FILE_SET HEADERS BASE_DIRS packages FILES ${HEADERS}
   )
 
-  if (${PACKAGE_NAME} NOT MATCHES "source-parsers-shared")
+  if (NOT ${PACKAGE_NAME} MATCHES "source-parsers-shared")
     target_link_libraries(${PACKAGE_NAME} PRIVATE SourceParsers::source-parsers-shared)
   endif ()
 
