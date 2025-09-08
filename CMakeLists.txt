@@ -12,10 +12,10 @@ add_library(${PROJECT_NAME})
 target_sources(
         ${PROJECT_NAME}
         PRIVATE ${sources}
-        PUBLIC FILE_SET HEADERS BASE_DIRS bspparser FILES ${headers}
+        PUBLIC FILE_SET HEADERS BASE_DIRS packages FILES ${headers}
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE bspparser)
+target_include_directories(${PROJECT_NAME} PRIVATE packages)
 
 include(GNUInstallDirs)
 
