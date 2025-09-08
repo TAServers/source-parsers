@@ -7,8 +7,8 @@ function(RegisterPublicPackage PACKAGE_NAME)
 
   # Traditionally, you shouldn't GLOB source files as it breaks changed file detection.
   # However, the "new" CONFIGURE_DEPENDS parameter solves this for most cases with minimal bulid-time overhead
-  file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.cpp")
-  file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.hpp")
+  file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.cpp" "packages/source-parsers-shared/*.cpp")
+  file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.hpp" "packages/source-parsers-shared/*.hpp")
 
   add_library(${PACKAGE_NAME})
   target_sources(
@@ -16,10 +16,6 @@ function(RegisterPublicPackage PACKAGE_NAME)
           PRIVATE ${SOURCES}
           PUBLIC FILE_SET HEADERS BASE_DIRS packages FILES ${HEADERS}
   )
-
-  if (NOT ${PACKAGE_NAME} MATCHES "source-parsers-shared")
-    target_link_libraries(${PACKAGE_NAME} PRIVATE SourceParsers::source-parsers-shared)
-  endif ()
 
   target_include_directories(${PACKAGE_NAME} PRIVATE packages)
 
