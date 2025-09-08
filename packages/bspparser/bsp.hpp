@@ -5,13 +5,13 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <source-parsers-shared/internal/check-bounds.hpp>
+#include <source-parsers-shared/internal/offset-data-view.hpp>
 #include "errors.hpp"
 #include "phys-model.hpp"
 #include "displacements/triangulated-displacement.hpp"
 #include "enums/lump.hpp"
 #include "helpers/zip.hpp"
-#include "shared/internal/check-bounds.hpp"
-#include "shared/internal/offset-data-view.hpp"
 #include "structs/common.hpp"
 #include "structs/detail-props.hpp"
 #include "structs/displacements.hpp"

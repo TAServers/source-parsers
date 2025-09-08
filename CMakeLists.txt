@@ -5,4 +5,5 @@ set(CMAKE_CXX_STANDARD 20)
 
 include(cmake/RegisterPublicPackage.cmake)
 
+RegisterPublicPackage(source-parsers-shared)
 RegisterPublicPackage(bspparser)
