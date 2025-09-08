@@ -10,6 +10,7 @@
 #include "displacements/triangulated-displacement.hpp"
 #include "enums/lump.hpp"
 #include "helpers/zip.hpp"
+#include "shared/internal/check-bounds.hpp"
 #include "shared/internal/offset-data-view.hpp"
 #include "structs/common.hpp"
 #include "structs/detail-props.hpp"
@@ -140,7 +141,9 @@ namespace BspParser {
         );
       }
 
-      const auto dictionaryData = Internal::OffsetDataView(std::span(&data[lumpHeader.offset], lumpHeader.length));
+      const auto dictionaryData = SourceParsers::Internal::OffsetDataView(
+        std::span(&data[lumpHeader.offset], lumpHeader.length)
+      );
       const auto numDictionaryEntries = dictionaryData.parseStruct<int32_t>(
         0,
         "Static prop game lump length is shorter than a single int32 for the dictionary count"
