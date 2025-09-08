@@ -1,16 +1,6 @@
-# Source Engine Parsers
+# BSPParser
 
-Simple and modern libraries for parsing the various Valve Source Engine file formats.
-
-Documentation: https://taservers.github.io/source-parsers/
-
-Supports the following file formats:
-
-- BSP
-- MDL
-- PHY
-- VTF
-- VPK
+Simple and modern library for parsing the Valve BSP map format.
 
 ## What's included
 
