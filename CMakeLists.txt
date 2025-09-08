@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.23)
 
 project("BSPParser" CXX)
 set(CMAKE_CXX_STANDARD 20)
-string(TOLOWER "${PROJECT_NAME}" PROJECT_NAME_LOWER)
 
 # Traditionally, you shouldn't GLOB source files as it breaks changed file detection.
 # However, the "new" CONFIGURE_DEPENDS parameter solves this for most cases with minimal bulid-time overhead
@@ -13,9 +12,10 @@ add_library(${PROJECT_NAME})
 target_sources(
         ${PROJECT_NAME}
         PRIVATE ${sources}
-        PUBLIC FILE_SET HEADERS BASE_DIRS src FILES ${headers})
+        PUBLIC FILE_SET HEADERS BASE_DIRS bspparser FILES ${headers}
+)
 
-target_include_directories(${PROJECT_NAME} PRIVATE src)
+target_include_directories(${PROJECT_NAME} PRIVATE bspparser)
 
 include(GNUInstallDirs)
 
@@ -25,7 +25,7 @@ install(
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        FILE_SET HEADERS DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME_LOWER}"
+        FILE_SET HEADERS
 )
 install(
         EXPORT ${PROJECT_NAME}
