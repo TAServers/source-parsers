@@ -18,7 +18,6 @@ function(RegisterPublicPackage PACKAGE_NAME)
   )
 
   if (NOT ${PACKAGE_NAME} MATCHES "source-parsers-shared")
-    find_package(CONFIG source-parsers-shared)
     target_link_libraries(${PACKAGE_NAME} PRIVATE SourceParsers::source-parsers-shared)
   endif ()
 
