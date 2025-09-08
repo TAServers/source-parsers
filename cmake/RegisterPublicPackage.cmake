@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.28)
 
 include(GNUInstallDirs)
 
-function(RegisterPublicPackage)
-  set(PACKAGE_NAME "${arg1}")
+function(RegisterPublicPackage PACKAGE_NAME)
+  message(STATUS "Registering public package '${PACKAGE_NAME}'")
 
   # Traditionally, you shouldn't GLOB source files as it breaks changed file detection.
   # However, the "new" CONFIGURE_DEPENDS parameter solves this for most cases with minimal bulid-time overhead
