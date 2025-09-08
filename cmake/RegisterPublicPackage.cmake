@@ -7,14 +7,15 @@ function(RegisterPublicPackage PACKAGE_NAME)
 
   # Traditionally, you shouldn't GLOB source files as it breaks changed file detection.
   # However, the "new" CONFIGURE_DEPENDS parameter solves this for most cases with minimal bulid-time overhead
-  file(GLOB_RECURSE sources CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.cpp")
-  file(GLOB_RECURSE headers CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.hpp")
+  file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.cpp")
+  file(GLOB_RECURSE SHARED_SOURCES CONFIGURE_DEPENDS "packages/shared/*.cpp")
+  file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "packages/${PACKAGE_NAME}/*.hpp")
 
   add_library(${PACKAGE_NAME})
   target_sources(
           ${PACKAGE_NAME}
-          PRIVATE ${sources}
-          PUBLIC FILE_SET HEADERS BASE_DIRS packages FILES ${headers}
+          PRIVATE ${SOURCES} ${SHARED_SOURCES}
+          PUBLIC FILE_SET HEADERS BASE_DIRS packages FILES ${HEADERS}
   )
 
   target_link_libraries(${PACKAGE_NAME} PRIVATE SourceParsersShared)
@@ -37,6 +38,6 @@ function(RegisterPublicPackage PACKAGE_NAME)
           EXPORT ${PACKAGE_NAME}
           DESTINATION share/${PACKAGE_NAME}
           FILE ${PACKAGE_NAME}Config.cmake
-          NAMESPACE taservers::
+          NAMESPACE SourceParsers::
   )
 endfunction()
