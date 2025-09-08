@@ -1,10 +1,10 @@
 #include "offset-data-view.hpp"
 
-namespace BspParser::Internal {
+namespace SourceParsers::Internal {
   OffsetDataView::OffsetDataView(const std::span<const std::byte> data) : data(data), offset(0) {}
 
-  OffsetDataView::OffsetDataView(const OffsetDataView& from, const size_t newOffset) :
-    data(from.data), offset(newOffset) {}
+  OffsetDataView::OffsetDataView(const OffsetDataView& from, const size_t newOffset)
+    : data(from.data), offset(newOffset) {}
 
   OffsetDataView OffsetDataView::withRelativeOffset(const size_t newOffset) const {
     return OffsetDataView(*this, offset + newOffset);
@@ -19,6 +19,6 @@ namespace BspParser::Internal {
       }
     }
 
-    throw Errors::OutOfBoundsAccess(Enums::Lump::None, errorMessage);
+    throw Errors::OutOfBoundsAccess(errorMessage);
   }
 }

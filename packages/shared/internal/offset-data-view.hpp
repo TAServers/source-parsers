@@ -1,13 +1,14 @@
 #pragma once
 
-#include "check-bounds.hpp"
 #include <memory>
 #include <span>
+#include "check-bounds.hpp"
 
-namespace BspParser::Internal {
+namespace SourceParsers::Internal {
   class OffsetDataView {
   public:
-    template <typename T> using ValueOffsetPair = std::pair<T, size_t>;
+    template<typename T>
+    using ValueOffsetPair = std::pair<T, size_t>;
 
     explicit OffsetDataView(std::span<const std::byte> data);
 
@@ -21,7 +22,7 @@ namespace BspParser::Internal {
 
     [[nodiscard]] OffsetDataView withRelativeOffset(size_t newOffset) const;
 
-    template <typename T>
+    template<typename T>
     [[nodiscard]] const T& parseStruct(const size_t relativeOffset, const char* errorMessage) const {
       const auto absoluteOffset = offset + relativeOffset;
       checkBounds(absoluteOffset, sizeof(T), data.size_bytes(), errorMessage);
@@ -29,9 +30,11 @@ namespace BspParser::Internal {
       return *reinterpret_cast<const T*>(&data[absoluteOffset]);
     }
 
-    template <typename T>
+    template<typename T>
     [[nodiscard]] std::span<const T> parseStructArray(
-      const size_t relativeOffset, const size_t count, const char* errorMessage
+      const size_t relativeOffset,
+      const size_t count,
+      const char* errorMessage
     ) const {
       if (count == 0) {
         return std::span<const T>(static_cast<const T*>(nullptr), 0);
