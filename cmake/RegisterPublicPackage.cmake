@@ -17,7 +17,10 @@ function(RegisterPublicPackage PACKAGE_NAME)
           PUBLIC FILE_SET HEADERS BASE_DIRS packages FILES ${HEADERS}
   )
 
-  target_link_libraries(${PACKAGE_NAME} PRIVATE SourceParsers::source-parsers-shared)
+  if (${PACKAGE_NAME} NOT MATCHES "source-parsers-shared")
+    target_link_libraries(${PACKAGE_NAME} PRIVATE SourceParsers::source-parsers-shared)
+  endif ()
+
   target_include_directories(${PACKAGE_NAME} PRIVATE packages)
 
   install(
