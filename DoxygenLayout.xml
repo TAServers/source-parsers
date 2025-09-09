@@ -5,8 +5,35 @@
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="pages" visible="no" title="" intro=""/>
-    <tab type="user" url="@ref BspParser::Bsp" title="Parser"/>
-    <tab type="user" url="@ref BspParser::Accessors" title="Accessors"/>
+    <tab type="usergroup" url="@ref packages/bspparser/bspparser-doxygen.md" title="BSPParser">
+      <tab type="user" url="@ref BspParser::Bsp" title="Parser"/>
+      <tab type="user" url="@ref BspParser::Accessors" title="Accessors"/>
+    </tab>
+    <tab type="usergroup" url="@ref packages/mdlparser/mdlparser-doxygen.md" title="MDLParser">
+      <tab type="usergroup" url="[none]" title="Parsers">
+        <tab type="user" url="@ref MdlParser::Mdl" title="MDL"/>
+        <tab type="user" url="@ref MdlParser::Vtx" title="VTX"/>
+        <tab type="user" url="@ref MdlParser::Vvd" title="VVD"/>
+      </tab>
+      <tab type="user" url="@ref MdlParser::Accessors" title="Accessors"/>
+      <tab type="user" url="@ref MdlParser::Enums::Mdl" title="MDL Enums"/>
+      <tab type="user" url="@ref MdlParser::Enums::Vtx" title="VTX Enums"/>
+    </tab>
+    <tab type="usergroup" url="@ref packages/phyparser/phyparser-doxygen.md" title="PHYParser">
+      <tab type="user" url="@ref PhyParser::Phy" title="Parser"/>
+    </tab>
+    <tab type="usergroup" url="@ref packages/vdfparser/vdfparser-doxygen.md" title="VDFParser">
+      <tab type="user" url="@ref VdfParser::fromString" title="Parser"/>
+    </tab>
+    <tab type="usergroup" url="@ref packages/vpkparser/vpkparser-doxygen.md" title="VPKParser">
+      <tab type="user" url="@ref VpkParser::Vpk" title="Parser"/>
+    </tab>
+    <tab type="usergroup" url="@ref packages/vtfparser/vtfparser-doxygen.md" title="VTFParser">
+      <tab type="user" url="@ref VtfParser::Vtf" title="Parser"/>
+      <tab type="user" url="@ref VtfParser::ImageFormat" title="Image Formats"/>
+      <tab type="user" url="@ref VtfParser::TextureFlags" title="Texture Flags"/>
+    </tab>
+
     <tab type="classes" visible="yes" title="">
       <tab type="classlist" visible="yes" title="" intro=""/>
       <!-- <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/> -->
@@ -17,7 +44,7 @@
       <tab type="namespacelist" visible="yes" title="" intro=""/>
       <tab type="namespacemembers" visible="no" title="" intro=""/>
     </tab>
-    <tab type="user" url="https://github.com/TAServers/BSPParser" title="GitHub"/>
+    <tab type="user" url="https://github.com/TAServers/source-parsers" title="GitHub"/>
 
     <!-- Default tabs -->
     <tab type="topics" visible="no" title="" intro=""/>
