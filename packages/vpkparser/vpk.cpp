@@ -19,7 +19,7 @@ namespace VpkParser {
 
   Vpk::Vpk(const std::span<std::byte>& data) {
     const OffsetDataView dataView(data);
-    const auto header = dataView.parseStruct<HeaderV1>(0, "Failed to parse base VPK header").first;
+    const auto& header = dataView.parseStruct<HeaderV1>(0, "Failed to parse base VPK header");
 
     if (header.signature != FILE_SIGNATURE) {
       throw InvalidHeader("VPK signature does not equal 0x55aa1234");
@@ -31,7 +31,7 @@ namespace VpkParser {
 
     size_t offset = header.version == 1 ? sizeof(HeaderV1) : sizeof(HeaderV2);
     while (true) {
-      auto extension = dataView.parseString(offset, "Failed to parse extension");
+      auto extension = std::string(dataView.parseString(offset, "Failed to parse extension"));
       offset += extension.length() + 1;
       if (extension.empty()) {
         break;
@@ -41,7 +41,7 @@ namespace VpkParser {
       files.emplace(extension, CaseInsensitiveMap<CaseInsensitiveMap<File>>());
 
       while (true) {
-        auto directory = dataView.parseString(offset, "Failed to parse directory");
+        auto directory = std::string(dataView.parseString(offset, "Failed to parse directory"));
         offset += directory.length() + 1;
         if (directory.empty()) {
           break;
@@ -64,8 +64,14 @@ namespace VpkParser {
           }
 
           const auto directoryInfo =
-            dataView.parseStruct<DirectoryEntry>(offset, "Failed to parse directory entry").first;
+            dataView.parseStruct<DirectoryEntry>(offset, "Failed to parse directory entry");
           offset += sizeof(DirectoryEntry);
+
+          const auto preloadData = dataView.parseStructArray<std::byte>(
+            offset,
+            directoryInfo.preloadDataSize,
+            "Failed to parse preload data"
+          );
 
           files.at(extension).at(directory).emplace(
             filename,
@@ -73,11 +79,7 @@ namespace VpkParser {
               .archiveIndex = directoryInfo.archiveIndex,
               .offset = directoryInfo.entryOffset,
               .size = directoryInfo.entrySize,
-              .preloadData = dataView.parseStructArrayWithoutOffsets<std::byte>(
-                offset,
-                directoryInfo.preloadDataSize,
-                "Failed to parse preload data"
-              ),
+              .preloadData = std::vector(preloadData.begin(), preloadData.end()),
             }
           );
 
