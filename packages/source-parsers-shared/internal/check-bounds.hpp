@@ -9,4 +9,10 @@ namespace SourceParsers::Internal {
       throw Errors::OutOfBoundsAccess(errorMessage);
     }
   }
+
+  inline void checkBounds(const int64_t offset, const size_t count, const size_t rangeSize, const char* errorMessage) {
+    if (offset < 0 || offset >= rangeSize || offset + count > rangeSize) {
+      throw Errors::OutOfBoundsAccess(errorMessage);
+    }
+  }
 }
