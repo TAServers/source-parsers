@@ -4,7 +4,7 @@ Simple and modern library for parsing the Valve BSP map format.
 
 ## What's included
 
-- Class for parsing and abstracing the `BSP` file format for the Source engine.
+- Class for parsing and abstracting the `BSP` file format for the Source engine.
 - Helper functions to simplify accessing the complex data structures of the BSP (see example below)
 - Enums and structs with decent coverage of the BSP lumps and their versions.
 - Runtime errors for issues when parsing the data due to corruption or a bug in the parser.
@@ -14,7 +14,7 @@ Simple and modern library for parsing the Valve BSP map format.
 Generating a triangle list for all models in the BSP:
 
 ```cpp
-#include "BSPParser.hpp"
+#include <bspparser/bspparser.hpp>
 
 // Load from a file on disk, an API, or somewhere in memory
 const auto bspData = ...;
