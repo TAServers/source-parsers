@@ -1,10 +1,16 @@
 #pragma once
 
+#include <format>
+#include <span>
+#include <string>
+#include <variant>
+#include <vector>
+#include <source-parsers-shared/internal/check-bounds.hpp>
+#include <source-parsers-shared/internal/offset-data-view.hpp>
 #include "errors.hpp"
 #include "phys-model.hpp"
 #include "displacements/triangulated-displacement.hpp"
 #include "enums/lump.hpp"
-#include "helpers/offset-data-view.hpp"
 #include "helpers/zip.hpp"
 #include "structs/common.hpp"
 #include "structs/detail-props.hpp"
@@ -14,11 +20,6 @@
 #include "structs/models.hpp"
 #include "structs/static-props.hpp"
 #include "structs/textures.hpp"
-#include <format>
-#include <span>
-#include <string>
-#include <variant>
-#include <vector>
 
 namespace BspParser {
   /**
@@ -72,7 +73,7 @@ namespace BspParser {
       std::span<const Structs::StaticPropV5>,
       std::span<const Structs::StaticPropV6>,
       std::span<const Structs::StaticPropV7Multiplayer2013>>>
-      staticProps = std::nullopt;
+    staticProps = std::nullopt;
 
     /**
      * Smooths normals and tangents between neighbouring displacements for rendering.
@@ -81,7 +82,7 @@ namespace BspParser {
     void smoothNeighbouringDisplacements();
 
   private:
-    template <typename LumpType>
+    template<typename LumpType>
     std::span<const LumpType> parseLump(Enums::Lump lump, size_t maxItems = std::numeric_limits<size_t>::max()) {
       const auto& lumpHeader = header->lumps.at(static_cast<size_t>(lump));
 
@@ -101,7 +102,8 @@ namespace BspParser {
       const auto numItems = lumpHeader.length / sizeof(LumpType);
       if (numItems > maxItems) {
         throw Errors::InvalidBody(
-          lump, std::format("Number of lump items ({}) exceeds source engine maximum ({})", numItems, maxItems)
+          lump,
+          std::format("Number of lump items ({}) exceeds source engine maximum ({})", numItems, maxItems)
         );
       }
 
@@ -112,7 +114,7 @@ namespace BspParser {
 
     [[nodiscard]] std::vector<PhysModel> parsePhysCollideLump() const;
 
-    template <class StaticProp>
+    template<class StaticProp>
     [[nodiscard]] std::span<const StaticProp> parseStaticPropLump(const Structs::GameLump& lumpHeader) {
       if (lumpHeader.offset < 0) {
         throw Errors::InvalidBody(
@@ -139,29 +141,40 @@ namespace BspParser {
         );
       }
 
-      const auto dictionaryData = Internal::OffsetDataView(std::span(&data[lumpHeader.offset], lumpHeader.length));
+      const auto dictionaryData = SourceParsers::Internal::OffsetDataView(
+        std::span(&data[lumpHeader.offset], lumpHeader.length)
+      );
       const auto numDictionaryEntries = dictionaryData.parseStruct<int32_t>(
-        0, "Static prop game lump length is shorter than a single int32 for the dictionary count"
+        0,
+        "Static prop game lump length is shorter than a single int32 for the dictionary count"
       );
       staticPropDictionary = dictionaryData.parseStructArray<Structs::StaticPropDict>(
-        sizeof(int32_t), numDictionaryEntries, "Static prop game lump dictionary entries overflowed the lump"
+        sizeof(int32_t),
+        numDictionaryEntries,
+        "Static prop game lump dictionary entries overflowed the lump"
       );
 
       const auto leafData =
         dictionaryData.withRelativeOffset(sizeof(int32_t) + numDictionaryEntries * sizeof(Structs::StaticPropDict));
       const auto numLeaves = leafData.parseStruct<int32_t>(
-        0, "Static prop game lump length is shorter than its dictionary entries plus a single int32 for the leaf count"
+        0,
+        "Static prop game lump length is shorter than its dictionary entries plus a single int32 for the leaf count"
       );
       staticPropLeaves = leafData.parseStructArray<Structs::StaticPropLeaf>(
-        sizeof(int32_t), numLeaves, "Static prop game lump leaves overflowed the lump"
+        sizeof(int32_t),
+        numLeaves,
+        "Static prop game lump leaves overflowed the lump"
       );
 
       const auto propData = leafData.withRelativeOffset(sizeof(int32_t) + numLeaves * sizeof(Structs::StaticPropLeaf));
       const auto numProps = propData.parseStruct<int32_t>(
-        0, "Static prop game lump length is shorter than its dictionary, leaves, and a single int32 for the prop count"
+        0,
+        "Static prop game lump length is shorter than its dictionary, leaves, and a single int32 for the prop count"
       );
       const auto props = propData.parseStructArray<StaticProp>(
-        sizeof(int32_t), numProps, "Static prop game lump props overflowed the lump"
+        sizeof(int32_t),
+        numProps,
+        "Static prop game lump props overflowed the lump"
       );
 
       return props;

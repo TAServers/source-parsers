@@ -27,7 +27,7 @@ namespace BspParser {
   namespace Zip {}
 }
 
-#include "./src/accessors/face-accessors.hpp"
-#include "./src/accessors/prop-accessors.hpp"
-#include "./src/accessors/texture-accessors.hpp"
-#include "./src/bsp.hpp"
+#include "bsp.hpp"
+#include "accessors/face-accessors.hpp"
+#include "accessors/prop-accessors.hpp"
+#include "accessors/texture-accessors.hpp"
