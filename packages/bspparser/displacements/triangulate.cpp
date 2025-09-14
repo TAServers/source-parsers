@@ -18,7 +18,7 @@ namespace BspParser {
       size_t firstCorner = 0;
       auto firstCornerDistanceSquared = std::numeric_limits<float>::max();
 
-      for (size_t surfEdgeIndex = 0; surfEdgeIndex < std::min(surfaceEdges.size(), 4ull); surfEdgeIndex++) {
+      for (size_t surfEdgeIndex = 0; surfEdgeIndex < std::min<unsigned long>(surfaceEdges.size(), 4ul); surfEdgeIndex++) {
         const auto vertex = getVertexPosition(edges, vertices, surfaceEdges[surfEdgeIndex]);
         corners.at(surfEdgeIndex) = vertex;
 
