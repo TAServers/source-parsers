@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "../bsp.hpp"
 #include "../vertex.hpp"
 #include <functional>
