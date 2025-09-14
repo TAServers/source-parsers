@@ -5,6 +5,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <optional>
 #include <source-parsers-shared/internal/check-bounds.hpp>
 #include <source-parsers-shared/internal/offset-data-view.hpp>
 #include "errors.hpp"
