@@ -137,3 +137,5 @@ namespace VtfParser {
 
 #pragma pack(pop)
 }
+
+#undef align
