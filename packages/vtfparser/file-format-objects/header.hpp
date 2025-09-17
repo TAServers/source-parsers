@@ -5,6 +5,12 @@
 #include <cstdint>
 #include "enums.hpp"
 
+#ifdef _MSC_VER
+#define align(x) alignas(x)
+#else
+#define align(x) __attribute__((aligned(x)))
+#endif
+
 namespace VtfParser {
 #pragma pack(push, 1)
 
@@ -29,7 +35,7 @@ namespace VtfParser {
   /**
    * Aligned full header (only for alignment reasons, do not use outside of Header declaration).
    */
-  struct __attribute__((aligned(16))) HeaderFullAligned : public HeaderBase {
+  struct align(16) HeaderFullAligned : public HeaderBase {
     /**
      * Width of the largest mipmap in pixels. Must be a power of 2.
      */
@@ -131,3 +137,5 @@ namespace VtfParser {
 
 #pragma pack(pop)
 }
+
+#undef align
