@@ -21,15 +21,22 @@
 #include "structs/models.hpp"
 #include "structs/static-props.hpp"
 #include "structs/textures.hpp"
+#include "structs/lzma-header.hpp"
 
 namespace BspParser {
+  /**
+   * Callback method for decompressing any LZMA lumps in the BSP. If not provided, parsing will fail if any LZMA lumps are encountered.
+   * This should return a vector of the uncompressed data after LZMA decompression.
+   */
+  using LZMADecompressCallback = std::function<std::vector<std::byte>(std::span<const std::byte> compressedData, size_t uncompressedSize)>;
+
   /**
    * Lightweight abstraction over a BSP file, providing direct access to many of its lumps without any additional allocations.
    *
    * @note Does not take ownership of the passed data. It is your responsibility to ensure the lifetime of the BSP does not exceed that of the underlying data.
    */
   struct Bsp {
-    explicit Bsp(std::span<const std::byte> data);
+    explicit Bsp(std::span<const std::byte> data, std::optional<LZMADecompressCallback> lzmaDecompressCallback = std::nullopt);
 
     std::span<const std::byte> data;
 
@@ -63,6 +70,9 @@ namespace BspParser {
 
     std::vector<Zip::ZipFileEntry> compressedPakfile;
 
+    std::vector<std::vector<std::byte>> decompressedLumps;
+    std::optional<LZMADecompressCallback> lzmaDecompressCallback = std::nullopt;
+
     // std::span<const Structs::DetailObjectDict> detailObjectDictionary;
     // std::span<const Structs::DetailObject> detailObjects;
 
@@ -83,6 +93,34 @@ namespace BspParser {
     void smoothNeighbouringDisplacements();
 
   private:
+    template <typename LumpType>
+    std::span<const LumpType> decompressLump(Enums::Lump lump, const Structs::LzmaHeader* header) {
+      if (!lzmaDecompressCallback) {
+        throw Errors::MissingDecompressCallback(
+          lump,
+          "Encountered an LZMA-compressed lump but no LZMA decompression callback was provided"
+          );
+      }
+
+      const auto compressedDataStart = reinterpret_cast<const std::byte*>(header + 1);
+      const auto compressedData = std::span<const std::byte>(compressedDataStart, header->compressedSize);
+      const auto callback = lzmaDecompressCallback.value();
+      decompressedLumps.push_back(callback(compressedData, header->uncompressedSize));
+
+      const auto& decompressedData = decompressedLumps.back();
+      return {decompressedData.begin(), decompressedData.end()};
+    }
+
+    template<typename LumpType>
+    std::span<const LumpType> getLumpData(Enums::Lump lump, const LumpType* start, size_t numItems) {
+      const auto* potentialLZMAHeader = reinterpret_cast<const Structs::LzmaHeader*>(start);
+      if (potentialLZMAHeader->id != Structs::LzmaHeader::LZMA_ID) {
+        return std::span<const LumpType>(start, numItems);
+      }
+
+      return decompressLump<LumpType>(lump, potentialLZMAHeader);
+    }
+
     template<typename LumpType>
     std::span<const LumpType> parseLump(Enums::Lump lump, size_t maxItems = std::numeric_limits<size_t>::max()) {
       const auto& lumpHeader = header->lumps.at(static_cast<size_t>(lump));
@@ -108,7 +146,7 @@ namespace BspParser {
         );
       }
 
-      return std::span<const LumpType>(reinterpret_cast<const LumpType*>(&data[lumpHeader.offset]), numItems);
+      return getLumpData(lump, reinterpret_cast<const LumpType*>(&data[lumpHeader.offset]), numItems);
     }
 
     [[nodiscard]] std::span<const Structs::GameLump> parseGameLumpHeaders() const;
