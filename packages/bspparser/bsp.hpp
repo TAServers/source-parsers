@@ -12,6 +12,7 @@
 #include "phys-model.hpp"
 #include "displacements/triangulated-displacement.hpp"
 #include "enums/lump.hpp"
+#include "helpers/lzma-callback.hpp"
 #include "helpers/zip.hpp"
 #include "structs/common.hpp"
 #include "structs/detail-props.hpp"
@@ -24,18 +25,6 @@
 #include "structs/lzma-header.hpp"
 
 namespace BspParser {
-  struct LZMAMetadata {
-    uint32_t dictSize;
-    uint32_t uncompressedSize;
-    uint8_t properties[5];
-  };
-
-  /**
-   * Callback method for decompressing any LZMA lumps in the BSP. If not provided, parsing will fail if any LZMA lumps are encountered.
-   * This should return a vector of the uncompressed data after LZMA decompression.
-   */
-  using LZMADecompressCallback = std::function<std::vector<std::byte>(std::span<const std::byte> compressedData, LZMAMetadata metadata)>;
-
   /**
    * Lightweight abstraction over a BSP file, providing direct access to many of its lumps without any additional allocations.
    *
@@ -112,7 +101,6 @@ namespace BspParser {
       const auto compressedData = std::span<const std::byte>(compressedDataStart, header->compressedSize);
       const auto callback = lzmaDecompressCallback.value();
       const auto metadata = LZMAMetadata{
-        .dictSize = header->compressedSize,
         .uncompressedSize = header->uncompressedSize,
         .properties = { header->properties[0], header->properties[1], header->properties[2], header->properties[3], header->properties[4] }
       };
@@ -246,7 +234,7 @@ namespace BspParser {
       return props;
     }
 
-    [[nodiscard]] std::vector<Zip::ZipFileEntry> parsePakfileLump() const;
+    [[nodiscard]] std::vector<Zip::ZipFileEntry> parsePakfileLump();
 
     void assertLumpHeaderValid(Enums::Lump lump, const Structs::Lump& lumpHeader) const;
 

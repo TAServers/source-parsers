@@ -183,7 +183,7 @@ namespace BspParser {
     return std::move(physicsModels);
   }
 
-  std::vector<Zip::ZipFileEntry> Bsp::parsePakfileLump() const {
+  std::vector<Zip::ZipFileEntry> Bsp::parsePakfileLump() {
     const auto& lumpHeader = header->lumps.at(static_cast<size_t>(Enums::Lump::PakFile));
     assertLumpHeaderValid(Enums::Lump::PakFile, lumpHeader);
 
