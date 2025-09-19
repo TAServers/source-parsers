@@ -108,6 +108,10 @@ namespace VtfParser {
     }
 
     size_t getImageSizeBytes(const ImageSizeInfo& sizeInfo) {
+      if (sizeInfo.format == ImageFormat::NONE) {
+        return 0;
+      }
+
       size_t size = 0;
       for (uint8_t mipLevel = 0; mipLevel < sizeInfo.mipLevels; mipLevel++) {
         auto mipSizeInfo = sizeInfo;
