@@ -53,6 +53,8 @@ namespace BspParser::Structs {
   };
 
   struct GameLump {
+    static constexpr auto COMPRESSED_FLAG = 0x0001;
+
     Enums::GameLumpID id;
     uint16_t flags;
     uint16_t version;

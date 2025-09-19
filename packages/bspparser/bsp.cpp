@@ -5,7 +5,7 @@
 namespace BspParser {
   using namespace BspParser::Internal;
 
-  Bsp::Bsp(const std::span<std::byte const> data) : data(data) {
+  Bsp::Bsp(const std::span<std::byte const> data, std::optional<LZMADecompressCallback> lzmaDecompressCallback) : data(data), lzmaDecompressCallback(lzmaDecompressCallback) {
     if (data.size_bytes() < sizeof(Structs::Header)) {
       throw Errors::OutOfBoundsAccess(
         Enums::Lump::None,
@@ -127,15 +127,21 @@ namespace BspParser {
     );
   }
 
-  std::vector<PhysModel> Bsp::parsePhysCollideLump() const {
+  std::vector<PhysModel> Bsp::parsePhysCollideLump() {
     const auto& lumpHeader = header->lumps.at(static_cast<size_t>(Enums::Lump::PhysCollide));
     assertLumpHeaderValid(Enums::Lump::PhysCollide, lumpHeader);
 
+    const auto lumpData = isLumpCompressed(Enums::Lump::PhysCollide) ?
+                          decompressLump<std::byte>(Enums::Lump::PhysCollide, reinterpret_cast<const Structs::LzmaHeader*>(&data[lumpHeader.offset])) :
+                          data.subspan(lumpHeader.offset, lumpHeader.length);
+
+    const auto lumpLength = lumpData.size_bytes();
+
     std::vector<PhysModel> physicsModels;
 
-    size_t offset = lumpHeader.offset;
+    size_t offset = 0;
     while (true) {
-      auto remainingBytes = lumpHeader.length - (offset - lumpHeader.offset);
+      auto remainingBytes = lumpLength - offset;
 
       if (remainingBytes < sizeof(Structs::PhysModelHeader)) {
         throw Errors::InvalidBody(
@@ -143,7 +149,7 @@ namespace BspParser {
         );
       }
 
-      const auto& modelHeader = *reinterpret_cast<const Structs::PhysModelHeader*>(&data[offset]);
+      const auto& modelHeader = *reinterpret_cast<const Structs::PhysModelHeader*>(&lumpData[offset]);
       offset += sizeof(Structs::PhysModelHeader);
       remainingBytes -= sizeof(Structs::PhysModelHeader);
 
@@ -167,8 +173,8 @@ namespace BspParser {
         PhysModel{
           .modelIndex = modelHeader.modelIndex,
           .solidCount = modelHeader.solidCount,
-          .collisionData = data.subspan(offset, modelHeader.collisionDataSize),
-          .textSectionData = data.subspan(offset + modelHeader.collisionDataSize, modelHeader.textSectionSize),
+          .collisionData = lumpData.subspan(offset, modelHeader.collisionDataSize),
+          .textSectionData = lumpData.subspan(offset + modelHeader.collisionDataSize, modelHeader.textSectionSize),
         }
       );
       offset += modelHeader.collisionDataSize + modelHeader.textSectionSize;

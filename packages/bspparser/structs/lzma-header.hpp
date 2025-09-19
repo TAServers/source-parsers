@@ -3,6 +3,7 @@
 #include <cstdint>
 
 namespace BspParser::Structs {
+#pragma pack(push, 1)
   struct LzmaHeader {
     static constexpr uint32_t LZMA_ID = 'A' << 24 | 'M' << 16 | 'Z' << 8 | 'L';
 
@@ -11,4 +12,5 @@ namespace BspParser::Structs {
     uint32_t compressedSize;
     uint8_t properties[5];
   };
+#pragma pack(pop)
 }
