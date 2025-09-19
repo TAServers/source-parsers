@@ -14,6 +14,7 @@ namespace BspParser::Zip {
     uint8_t minorVersion;
     uint32_t uncompressedSize;
     uint8_t properties[5];
+    uint8_t compressionHeaderSize = sizeof(Structs::Zip::CompressionPayload);
   };
 
   struct ZipFileEntry {
