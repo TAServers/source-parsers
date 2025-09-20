@@ -5,7 +5,7 @@
 namespace BspParser {
   using namespace BspParser::Internal;
 
-  Bsp::Bsp(const std::span<std::byte const> data, std::optional<LZMADecompressCallback> lzmaDecompressCallback)
+  Bsp::Bsp(const std::span<std::byte const> data, std::optional<LzmaDecompressCallback> lzmaDecompressCallback)
     : data(data), lzmaDecompressCallback(lzmaDecompressCallback) {
     if (data.size_bytes() < sizeof(Structs::Header)) {
       throw Errors::OutOfBoundsAccess(

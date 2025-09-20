@@ -4,12 +4,16 @@
 #include <vector>
 #include <functional>
 #include <span>
+#include <array>
 
 namespace BspParser {
-  struct LZMAMetadata {
+  struct LzmaMetadata {
     uint32_t uncompressedSize;
-    uint8_t properties[5];
+    std::array<uint8_t, 5> properties;
   };
 
-  using LZMADecompressCallback = std::function<std::vector<std::byte>(std::span<const std::byte> compressedData, LZMAMetadata metadata)>;
+  using LzmaDecompressCallback = std::function<std::vector<std::byte>(
+    std::span<const std::byte> compressedData,
+    LzmaMetadata metadata
+  )>;
 }

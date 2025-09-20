@@ -22,7 +22,7 @@ namespace BspParser::Zip {
         const auto bytesAfterRecord = firstOffset - offset;
 
         if (possibleRecord.signature == EndOfCentralDirectoryRecord::SIGNATURE &&
-            possibleRecord.commentLength == bytesAfterRecord) {
+          possibleRecord.commentLength == bytesAfterRecord) {
           return possibleRecord;
         }
       }
@@ -31,7 +31,8 @@ namespace BspParser::Zip {
     }
 
     std::vector<FileHeader> readFileHeaders(
-      const std::span<const std::byte> zipData, const EndOfCentralDirectoryRecord& eocdRecord
+      const std::span<const std::byte> zipData,
+      const EndOfCentralDirectoryRecord& eocdRecord
     ) {
       std::vector<FileHeader> headers;
       headers.reserve(eocdRecord.numCentralDirectoryEntriesInThisDisk);
@@ -49,15 +50,21 @@ namespace BspParser::Zip {
     }
   }
 
-  std::optional<ZipFileLZMA> computeZipFileLZMA(const LocalFileHeader& localFileHeader, const std::span<const std::byte> fileData) {
+  std::optional<ZipFileLzmaMetadata> parseZipFileLzma(
+    const LocalFileHeader& localFileHeader,
+    const std::span<const std::byte> fileData
+  ) {
     if (localFileHeader.compressionMethod != Enums::ZipCompressionMethod::LZMA) {
       return std::nullopt;
     }
 
     const auto offsetView = SourceParsers::Internal::OffsetDataView(fileData);
-    const auto compressionPayload = offsetView.parseStruct<CompressionPayload>(0, "Failed to parse LZMA compression payload");
+    const auto compressionPayload = offsetView.parseStruct<CompressionPayload>(
+      0,
+      "Failed to parse LZMA compression payload"
+    );
 
-    return ZipFileLZMA{
+    return ZipFileLzmaMetadata{
       .majorVersion = compressionPayload.lzmaSdkMajorVersion,
       .minorVersion = compressionPayload.lzmaSdkMinorVersion,
       .uncompressedSize = localFileHeader.uncompressedSize,
@@ -100,7 +107,8 @@ namespace BspParser::Zip {
         localFileHeader.compressedSize
       );
       const auto fileName = std::string_view(
-        reinterpret_cast<const char*>(&zipData[endOfLocalHeaderOffset]), localFileHeader.fileNameLength
+        reinterpret_cast<const char*>(&zipData[endOfLocalHeaderOffset]),
+        localFileHeader.fileNameLength
       );
 
       files.push_back(
@@ -108,7 +116,7 @@ namespace BspParser::Zip {
           .header = fileHeader,
           .fileName = fileName,
           .data = fileData,
-          .lzmaMetadata = computeZipFileLZMA(localFileHeader, fileData),
+          .lzmaMetadata = parseZipFileLzma(localFileHeader, fileData),
         }
       );
     }

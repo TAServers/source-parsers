@@ -33,7 +33,7 @@ namespace BspParser {
   struct Bsp {
     explicit Bsp(
       std::span<const std::byte> data,
-      std::optional<LZMADecompressCallback> lzmaDecompressCallback = std::nullopt
+      std::optional<LzmaDecompressCallback> lzmaDecompressCallback = std::nullopt
     );
 
     std::span<const std::byte> data;
@@ -69,7 +69,7 @@ namespace BspParser {
     std::vector<Zip::ZipFileEntry> compressedPakfile;
 
     std::vector<std::vector<std::byte>> decompressedLumps;
-    std::optional<LZMADecompressCallback> lzmaDecompressCallback = std::nullopt;
+    std::optional<LzmaDecompressCallback> lzmaDecompressCallback = std::nullopt;
 
     // std::span<const Structs::DetailObjectDict> detailObjectDictionary;
     // std::span<const Structs::DetailObject> detailObjects;
@@ -108,7 +108,7 @@ namespace BspParser {
       );
 
       const auto callback = lzmaDecompressCallback.value();
-      const auto metadata = LZMAMetadata{
+      const auto metadata = LzmaMetadata{
         .uncompressedSize = header.uncompressedSize,
         .properties = {
           header.properties[0],
