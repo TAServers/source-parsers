@@ -17,6 +17,7 @@ namespace BspParser::Errors {
     InvalidChecksum,
     UnsupportedVersion,
     OutOfBoundsAccess,
+    MissingDecompressCallback,
   };
 
   class Error : public std::runtime_error {
@@ -42,6 +43,7 @@ namespace BspParser::Errors {
   ERROR_FOR_REASON(InvalidChecksum);
   ERROR_FOR_REASON(UnsupportedVersion);
   ERROR_FOR_REASON(OutOfBoundsAccess);
+  ERROR_FOR_REASON(MissingDecompressCallback);
 }
 
 #undef ERROR_FOR_REASON

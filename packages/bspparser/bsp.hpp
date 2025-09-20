@@ -12,6 +12,7 @@
 #include "phys-model.hpp"
 #include "displacements/triangulated-displacement.hpp"
 #include "enums/lump.hpp"
+#include "helpers/lzma-callback.hpp"
 #include "helpers/zip.hpp"
 #include "structs/common.hpp"
 #include "structs/detail-props.hpp"
@@ -21,6 +22,7 @@
 #include "structs/models.hpp"
 #include "structs/static-props.hpp"
 #include "structs/textures.hpp"
+#include "structs/lzma-header.hpp"
 
 namespace BspParser {
   /**
@@ -29,7 +31,7 @@ namespace BspParser {
    * @note Does not take ownership of the passed data. It is your responsibility to ensure the lifetime of the BSP does not exceed that of the underlying data.
    */
   struct Bsp {
-    explicit Bsp(std::span<const std::byte> data);
+    explicit Bsp(std::span<const std::byte> data, std::optional<LZMADecompressCallback> lzmaDecompressCallback = std::nullopt);
 
     std::span<const std::byte> data;
 
@@ -63,6 +65,9 @@ namespace BspParser {
 
     std::vector<Zip::ZipFileEntry> compressedPakfile;
 
+    std::vector<std::vector<std::byte>> decompressedLumps;
+    std::optional<LZMADecompressCallback> lzmaDecompressCallback = std::nullopt;
+
     // std::span<const Structs::DetailObjectDict> detailObjectDictionary;
     // std::span<const Structs::DetailObject> detailObjects;
 
@@ -83,24 +88,67 @@ namespace BspParser {
     void smoothNeighbouringDisplacements();
 
   private:
+    template <typename LumpType>
+    std::span<const LumpType> decompressLump(Enums::Lump lump, const Structs::LzmaHeader* header) {
+      if (!lzmaDecompressCallback) {
+        throw Errors::MissingDecompressCallback(
+          lump,
+          "Encountered an LZMA-compressed lump but no LZMA decompression callback was provided"
+          );
+      }
+
+      const auto compressedDataStart = reinterpret_cast<const std::byte*>(header + 1);
+      const auto compressedData = std::span<const std::byte>(compressedDataStart, header->compressedSize);
+      const auto callback = lzmaDecompressCallback.value();
+      const auto metadata = LZMAMetadata{
+        .uncompressedSize = header->uncompressedSize,
+        .properties = { header->properties[0], header->properties[1], header->properties[2], header->properties[3], header->properties[4] }
+      };
+
+      decompressedLumps.push_back(callback(compressedData, metadata));
+
+      const auto& decompressedData = decompressedLumps.back();
+      return std::span<const LumpType>(
+        reinterpret_cast<const LumpType*>(decompressedData.data()),
+        header->uncompressedSize / sizeof(LumpType)
+      );
+    }
+
+    bool isLumpCompressed(Enums::Lump lump) {
+      const auto& lumpHeader = header->lumps.at(static_cast<size_t>(lump));
+      return lumpHeader.fourCC != 0;
+    }
+
+    template<typename LumpType>
+    std::span<const LumpType> getLumpData(Enums::Lump lump, const LumpType* start, size_t numItems) {
+      const auto* potentialLZMAHeader = reinterpret_cast<const Structs::LzmaHeader*>(start);
+      if (potentialLZMAHeader->id != Structs::LzmaHeader::LZMA_ID) {
+        return std::span<const LumpType>(start, numItems);
+      }
+
+      return decompressLump<LumpType>(lump, potentialLZMAHeader);
+    }
+
     template<typename LumpType>
     std::span<const LumpType> parseLump(Enums::Lump lump, size_t maxItems = std::numeric_limits<size_t>::max()) {
       const auto& lumpHeader = header->lumps.at(static_cast<size_t>(lump));
 
       assertLumpHeaderValid(lump, lumpHeader);
 
-      if (lumpHeader.length % sizeof(LumpType) != 0) {
+      const auto lumpLength = lumpHeader.fourCC != 0 ? lumpHeader.fourCC : lumpHeader.length;
+
+      if (lumpLength % sizeof(LumpType)) {
         throw Errors::InvalidBody(
           lump,
           std::format(
             "Lump header has length ({}) which is not a multiple of the size of its item type ({})",
-            lumpHeader.length,
+            lumpLength,
             sizeof(LumpType)
           )
         );
       }
 
-      const auto numItems = lumpHeader.length / sizeof(LumpType);
+      const auto numItems = lumpLength / sizeof(LumpType);
       if (numItems > maxItems) {
         throw Errors::InvalidBody(
           lump,
@@ -108,12 +156,12 @@ namespace BspParser {
         );
       }
 
-      return std::span<const LumpType>(reinterpret_cast<const LumpType*>(&data[lumpHeader.offset]), numItems);
+      return getLumpData(lump, reinterpret_cast<const LumpType*>(&data[lumpHeader.offset]), numItems);
     }
 
     [[nodiscard]] std::span<const Structs::GameLump> parseGameLumpHeaders() const;
 
-    [[nodiscard]] std::vector<PhysModel> parsePhysCollideLump() const;
+    [[nodiscard]] std::vector<PhysModel> parsePhysCollideLump();
 
     template<class StaticProp>
     [[nodiscard]] std::span<const StaticProp> parseStaticPropLump(const Structs::GameLump& lumpHeader) {
@@ -142,9 +190,14 @@ namespace BspParser {
         );
       }
 
+      const auto isGameLumpCompressed = lumpHeader.flags & Structs::GameLump::COMPRESSED_FLAG != 0;
+
       const auto dictionaryData = SourceParsers::Internal::OffsetDataView(
-        std::span(&data[lumpHeader.offset], lumpHeader.length)
+        isGameLumpCompressed ?
+          decompressLump<std::byte>(Enums::Lump::GameLump, reinterpret_cast<const Structs::LzmaHeader*>(&data[lumpHeader.offset])) :
+          std::span(&data[lumpHeader.offset], lumpHeader.length)
       );
+
       const auto numDictionaryEntries = dictionaryData.parseStruct<int32_t>(
         0,
         "Static prop game lump length is shorter than a single int32 for the dictionary count"
@@ -181,7 +234,7 @@ namespace BspParser {
       return props;
     }
 
-    [[nodiscard]] std::vector<Zip::ZipFileEntry> parsePakfileLump() const;
+    [[nodiscard]] std::vector<Zip::ZipFileEntry> parsePakfileLump();
 
     void assertLumpHeaderValid(Enums::Lump lump, const Structs::Lump& lumpHeader) const;
 

@@ -60,5 +60,11 @@ namespace BspParser::Structs::Zip {
     uint16_t extraFieldLength;
   };
 
+  struct CompressionPayload {
+    uint8_t lzmaSdkMajorVersion;
+    uint8_t lzmaSdkMinorVersion;
+    uint16_t propertiesSize; // In practice, this should always be 5. If it's not, nothing will work anyways
+    uint8_t properties[5];
+  };
 #pragma pack(pop)
 }
