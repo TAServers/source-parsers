@@ -204,7 +204,7 @@ namespace BspParser {
       }
 
       const auto isGameLumpCompressed = lumpHeader.flags & Structs::GameLump::COMPRESSED_FLAG != 0;
-      const auto gameLumpSpan = std::span(&data[lumpHeader.offset], lumpHeader.length);
+      const auto gameLumpSpan = data.subspan(lumpHeader.offset, lumpHeader.length);
 
       const auto dictionaryData = SourceParsers::Internal::OffsetDataView(
         isGameLumpCompressed
