@@ -5,12 +5,15 @@
 namespace BspParser {
   using namespace BspParser::Internal;
 
-  Bsp::Bsp(const std::span<std::byte const> data, std::optional<LZMADecompressCallback> lzmaDecompressCallback) : data(data), lzmaDecompressCallback(lzmaDecompressCallback) {
+  Bsp::Bsp(const std::span<std::byte const> data, std::optional<LZMADecompressCallback> lzmaDecompressCallback)
+    : data(data), lzmaDecompressCallback(lzmaDecompressCallback) {
     if (data.size_bytes() < sizeof(Structs::Header)) {
       throw Errors::OutOfBoundsAccess(
         Enums::Lump::None,
         std::format(
-          "Size of data ({}) is less than the size of the header type ({})", data.size_bytes(), sizeof(Structs::Header)
+          "Size of data ({}) is less than the size of the header type ({})",
+          data.size_bytes(),
+          sizeof(Structs::Header)
         )
       );
     }
@@ -103,7 +106,8 @@ namespace BspParser {
       throw Errors::InvalidBody(
         Enums::Lump::GameLump,
         std::format(
-          "Game lump header has length ({}) less than the single int32 needed for the count", lumpHeader.length
+          "Game lump header has length ({}) less than the single int32 needed for the count",
+          lumpHeader.length
         )
       );
     }
@@ -123,7 +127,8 @@ namespace BspParser {
     }
 
     return std::span(
-      reinterpret_cast<const Structs::GameLump*>(&data[lumpHeader.offset + sizeof(int32_t)]), numGameLumpHeaders
+      reinterpret_cast<const Structs::GameLump*>(&data[lumpHeader.offset + sizeof(int32_t)]),
+      numGameLumpHeaders
     );
   }
 
@@ -131,9 +136,10 @@ namespace BspParser {
     const auto& lumpHeader = header->lumps.at(static_cast<size_t>(Enums::Lump::PhysCollide));
     assertLumpHeaderValid(Enums::Lump::PhysCollide, lumpHeader);
 
-    const auto lumpData = isLumpCompressed(Enums::Lump::PhysCollide) ?
-                          decompressLump<std::byte>(Enums::Lump::PhysCollide, reinterpret_cast<const Structs::LzmaHeader*>(&data[lumpHeader.offset])) :
-                          data.subspan(lumpHeader.offset, lumpHeader.length);
+    const auto lumpSpan = data.subspan(lumpHeader.offset, lumpHeader.length);
+    const auto lumpData = isLumpCompressed(Enums::Lump::PhysCollide)
+      ? decompressLump(Enums::Lump::PhysCollide, lumpSpan)
+      : lumpSpan;
 
     const auto lumpLength = lumpData.size_bytes();
 
@@ -145,7 +151,8 @@ namespace BspParser {
 
       if (remainingBytes < sizeof(Structs::PhysModelHeader)) {
         throw Errors::InvalidBody(
-          Enums::Lump::PhysCollide, std::format("PhysCollide lump is not terminated with a negative model index")
+          Enums::Lump::PhysCollide,
+          std::format("PhysCollide lump is not terminated with a negative model index")
         );
       }
 
@@ -220,7 +227,13 @@ namespace BspParser {
     const auto surfaceEdgesForDisplacement = surfaceEdges.subspan(face.firstEdge, face.numEdges);
 
     return TriangulatedDisplacement(
-      displacementInfo, displacementVertices, edges, vertices, surfaceEdgesForDisplacement, textureInfo, textureData
+      displacementInfo,
+      displacementVertices,
+      edges,
+      vertices,
+      surfaceEdgesForDisplacement,
+      textureInfo,
+      textureData
     );
   }
 }
