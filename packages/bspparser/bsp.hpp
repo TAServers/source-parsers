@@ -122,10 +122,14 @@ namespace BspParser {
       decompressedLumps.push_back(callback(lumpData.subspan(sizeof(Structs::LzmaHeader)), metadata));
 
       const auto& decompressedData = decompressedLumps.back();
-      return std::span<const LumpType>(
-        reinterpret_cast<const LumpType*>(decompressedData.data()),
-        header.uncompressedSize / sizeof(LumpType)
+      const auto decompressedOffsetView = SourceParsers::Internal::OffsetDataView(decompressedData);
+      const auto items = decompressedOffsetView.parseStructArray<LumpType>(
+        0,
+        header.uncompressedSize / sizeof(LumpType),
+        "Decompressed data is less than the intended size"
       );
+
+      return items;
     }
 
     bool isLumpCompressed(Enums::Lump lump) const {
