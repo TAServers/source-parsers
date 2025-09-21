@@ -1,7 +1,11 @@
 #include "zip.hpp"
+#include <source-parsers-shared/internal/offset-data-view.hpp>
+
 #include <limits>
 #include <optional>
 #include <stdexcept>
+
+#include "lzma-callback.hpp"
 
 namespace BspParser::Zip {
   using namespace Structs::Zip;
@@ -18,7 +22,7 @@ namespace BspParser::Zip {
         const auto bytesAfterRecord = firstOffset - offset;
 
         if (possibleRecord.signature == EndOfCentralDirectoryRecord::SIGNATURE &&
-            possibleRecord.commentLength == bytesAfterRecord) {
+          possibleRecord.commentLength == bytesAfterRecord) {
           return possibleRecord;
         }
       }
@@ -27,7 +31,8 @@ namespace BspParser::Zip {
     }
 
     std::vector<FileHeader> readFileHeaders(
-      const std::span<const std::byte> zipData, const EndOfCentralDirectoryRecord& eocdRecord
+      const std::span<const std::byte> zipData,
+      const EndOfCentralDirectoryRecord& eocdRecord
     ) {
       std::vector<FileHeader> headers;
       headers.reserve(eocdRecord.numCentralDirectoryEntriesInThisDisk);
@@ -43,6 +48,34 @@ namespace BspParser::Zip {
 
       return std::move(headers);
     }
+  }
+
+  std::optional<ZipFileLzmaMetadata> parseZipFileLzma(
+    const LocalFileHeader& localFileHeader,
+    const std::span<const std::byte> fileData
+  ) {
+    if (localFileHeader.compressionMethod != Enums::ZipCompressionMethod::LZMA) {
+      return std::nullopt;
+    }
+
+    const auto offsetView = SourceParsers::Internal::OffsetDataView(fileData);
+    const auto compressionPayload = offsetView.parseStruct<CompressionPayload>(
+      0,
+      "Failed to parse LZMA compression payload"
+    );
+
+    return ZipFileLzmaMetadata{
+      .majorVersion = compressionPayload.lzmaSdkMajorVersion,
+      .minorVersion = compressionPayload.lzmaSdkMinorVersion,
+      .uncompressedSize = localFileHeader.uncompressedSize,
+      .properties = {
+        compressionPayload.properties[0],
+        compressionPayload.properties[1],
+        compressionPayload.properties[2],
+        compressionPayload.properties[3],
+        compressionPayload.properties[4]
+      },
+    };
   }
 
   std::vector<ZipFileEntry> readZipFileEntries(const std::span<std::byte const> zipData) {
@@ -74,7 +107,8 @@ namespace BspParser::Zip {
         localFileHeader.compressedSize
       );
       const auto fileName = std::string_view(
-        reinterpret_cast<const char*>(&zipData[endOfLocalHeaderOffset]), localFileHeader.fileNameLength
+        reinterpret_cast<const char*>(&zipData[endOfLocalHeaderOffset]),
+        localFileHeader.fileNameLength
       );
 
       files.push_back(
@@ -82,6 +116,7 @@ namespace BspParser::Zip {
           .header = fileHeader,
           .fileName = fileName,
           .data = fileData,
+          .lzmaMetadata = parseZipFileLzma(localFileHeader, fileData),
         }
       );
     }

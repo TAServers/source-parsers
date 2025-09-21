@@ -5,12 +5,15 @@
 namespace BspParser {
   using namespace BspParser::Internal;
 
-  Bsp::Bsp(const std::span<std::byte const> data) : data(data) {
+  Bsp::Bsp(const std::span<std::byte const> data, std::optional<LzmaDecompressCallback> lzmaDecompressCallback)
+    : data(data), lzmaDecompressCallback(lzmaDecompressCallback) {
     if (data.size_bytes() < sizeof(Structs::Header)) {
       throw Errors::OutOfBoundsAccess(
         Enums::Lump::None,
         std::format(
-          "Size of data ({}) is less than the size of the header type ({})", data.size_bytes(), sizeof(Structs::Header)
+          "Size of data ({}) is less than the size of the header type ({})",
+          data.size_bytes(),
+          sizeof(Structs::Header)
         )
       );
     }
@@ -103,7 +106,8 @@ namespace BspParser {
       throw Errors::InvalidBody(
         Enums::Lump::GameLump,
         std::format(
-          "Game lump header has length ({}) less than the single int32 needed for the count", lumpHeader.length
+          "Game lump header has length ({}) less than the single int32 needed for the count",
+          lumpHeader.length
         )
       );
     }
@@ -123,27 +127,36 @@ namespace BspParser {
     }
 
     return std::span(
-      reinterpret_cast<const Structs::GameLump*>(&data[lumpHeader.offset + sizeof(int32_t)]), numGameLumpHeaders
+      reinterpret_cast<const Structs::GameLump*>(&data[lumpHeader.offset + sizeof(int32_t)]),
+      numGameLumpHeaders
     );
   }
 
-  std::vector<PhysModel> Bsp::parsePhysCollideLump() const {
+  std::vector<PhysModel> Bsp::parsePhysCollideLump() {
     const auto& lumpHeader = header->lumps.at(static_cast<size_t>(Enums::Lump::PhysCollide));
     assertLumpHeaderValid(Enums::Lump::PhysCollide, lumpHeader);
 
+    const auto lumpSpan = data.subspan(lumpHeader.offset, lumpHeader.length);
+    const auto lumpData = isLumpCompressed(Enums::Lump::PhysCollide)
+      ? decompressLump(Enums::Lump::PhysCollide, lumpSpan)
+      : lumpSpan;
+
+    const auto lumpLength = lumpData.size_bytes();
+
     std::vector<PhysModel> physicsModels;
 
-    size_t offset = lumpHeader.offset;
+    size_t offset = 0;
     while (true) {
-      auto remainingBytes = lumpHeader.length - (offset - lumpHeader.offset);
+      auto remainingBytes = lumpLength - offset;
 
       if (remainingBytes < sizeof(Structs::PhysModelHeader)) {
         throw Errors::InvalidBody(
-          Enums::Lump::PhysCollide, std::format("PhysCollide lump is not terminated with a negative model index")
+          Enums::Lump::PhysCollide,
+          std::format("PhysCollide lump is not terminated with a negative model index")
         );
       }
 
-      const auto& modelHeader = *reinterpret_cast<const Structs::PhysModelHeader*>(&data[offset]);
+      const auto& modelHeader = *reinterpret_cast<const Structs::PhysModelHeader*>(&lumpData[offset]);
       offset += sizeof(Structs::PhysModelHeader);
       remainingBytes -= sizeof(Structs::PhysModelHeader);
 
@@ -167,8 +180,8 @@ namespace BspParser {
         PhysModel{
           .modelIndex = modelHeader.modelIndex,
           .solidCount = modelHeader.solidCount,
-          .collisionData = data.subspan(offset, modelHeader.collisionDataSize),
-          .textSectionData = data.subspan(offset + modelHeader.collisionDataSize, modelHeader.textSectionSize),
+          .collisionData = lumpData.subspan(offset, modelHeader.collisionDataSize),
+          .textSectionData = lumpData.subspan(offset + modelHeader.collisionDataSize, modelHeader.textSectionSize),
         }
       );
       offset += modelHeader.collisionDataSize + modelHeader.textSectionSize;
@@ -177,7 +190,7 @@ namespace BspParser {
     return std::move(physicsModels);
   }
 
-  std::vector<Zip::ZipFileEntry> Bsp::parsePakfileLump() const {
+  std::vector<Zip::ZipFileEntry> Bsp::parsePakfileLump() {
     const auto& lumpHeader = header->lumps.at(static_cast<size_t>(Enums::Lump::PakFile));
     assertLumpHeaderValid(Enums::Lump::PakFile, lumpHeader);
 
@@ -214,7 +227,13 @@ namespace BspParser {
     const auto surfaceEdgesForDisplacement = surfaceEdges.subspan(face.firstEdge, face.numEdges);
 
     return TriangulatedDisplacement(
-      displacementInfo, displacementVertices, edges, vertices, surfaceEdgesForDisplacement, textureInfo, textureData
+      displacementInfo,
+      displacementVertices,
+      edges,
+      vertices,
+      surfaceEdgesForDisplacement,
+      textureInfo,
+      textureData
     );
   }
 }
